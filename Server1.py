@@ -31,9 +31,9 @@ def login(data, main_dicio, conn, main_list): #primeira opcao de login
                 conn.send("break".encode()) #caso nao manda o cliente terminar
         else:                               #caso exista
              if(main_dicio[i] != dicio[i]): #se a pass estiver errada
-                 conn.send(str(user_error).encode()) #
+                 conn.send(str(user_error).encode()) #manda erro de pass errada
              else:
-                 conn.send("continue".encode())
+                 conn.send("continue".encode()) #validation approved
                  accept_option(conn, i)
 
 def accept_option(conn, username):
@@ -41,8 +41,8 @@ def accept_option(conn, username):
     
 
 if __name__=='__main__':
-    HOST = "127.0.0.1"                # Symbolic name meaning all available interfaces
-    PORT =9000               # Arbitrary non-privileged port
+    HOST = "127.0.0.1"                
+    PORT =9000               
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((HOST, PORT))
     s.listen(1)
