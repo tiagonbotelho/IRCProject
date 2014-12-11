@@ -1,35 +1,39 @@
-# Echo client program
 import socket
-
-def menu_inicial(socket_fd):
-    print("WebMail:\n\n")
-    print("1.Login user\t\t\t2.Create user\n\nYour option: ")
-    c1='1'
-    c2='2'
-    opcao=int(input())
-    print(opcao)
-    if (opcao.isalpha()!=True or (opcao!=1 and opcao!=2)):
-        while(opcao.isalpha()!=True or (opcao!=1 and opcao!=2)):
-            opcao=input("Introduza uma opcao valida por favor: ")
-            print(opcao)
-    login(socket_fd)
+import system
 
 def login(socket_fd):
-    lista=[]
+    dicio={}
     username=input("Introduza o seu username: ")
     password=input("Introduza a sua password: ")
-    lista.append(username)
-    lista.append(password)
-    socket_fd.send(lista)
+    dicio[username]=password #coloca em dicionario a informacao do user
+    socket_fd.send(str(dicio).encode()) #manda pelo socket
+    new_data=socket_fd.recv(1024) 
+    new_data=new_data.decode()
+    if new_data == '404': 
+        print("[ERROR] password wrong please try again!")
+        login(socket_fd) #volta ao menu inicial para poder pedir a informacao
+    elif new_data == '2':
+        option=input("[User not found] do you wish to create one? [y/n] ")
+        socket_fd.send(option.encode())
+        nextm=socket_fd.recv(1024)
+        nextm=nextm.decode()
+            if nextm == 'continue':
+                options_menu(socket_fd)
+            else:
+                print("Ok... bye bye!")
+                sys.exit(0)
+
+def options_menu(socket_fd):
+    
+            
 
 if __name__=='__main__':
     HOST = '127.0.0.1'    # The remote host
     PORT = 9000              # The same port as used by the server
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((HOST, PORT))
-    s.send(b'Hello, world\n')
-    s.send(b'te fudere')
-    menu_inicial(s)
+    login(s)
     data = s.recv(1024)
+    data=data.decode()
+    dicionary=eval(data)
     s.close()
-    print('Received', repr(data))
