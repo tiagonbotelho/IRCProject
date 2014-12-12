@@ -1,7 +1,12 @@
 import socket
 import os
+import signal
+import sys
 
 
+def signal_handler(signal, frame):
+    print(' pressed...exiting now')
+    sys.exit(1)
 
 def write_file(dicio, filename):
     fp=open(filename, "w")
@@ -134,6 +139,7 @@ if __name__=='__main__':
     mail_dicio=read_user_file("mails.txt")
     main_dicio=read_user_file("users.txt")
     while True:
+        signal.signal(signal.SIGINT, signal_handler)
         conn, addr = s.accept()
         print('Connected by', addr)
         data=conn.recv(1024)
