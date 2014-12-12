@@ -2,6 +2,8 @@ import socket
 import sys
 import os
 
+
+
 def login(socket_fd):
     dicio={}
     username=input("Introduza o seu username: ")
@@ -23,7 +25,25 @@ def login(socket_fd):
         else:
             print("Ok... bye bye!")
             sys.exit(0)
+    elif new_data == 'continue':
+        options_menu(socket_fd)
 
+
+            
+def options_menu(socket_fd):
+    os.system('clear')
+    print("1.Inbox\n2.Delete E-mail\n3.Send Mail") #menu de opcoes do user
+    opcao=input("Introduza uma opcao valida: ")
+    while(opcao !='1' and opcao != '2' and opcao != '3'):
+        opcao=input("Introduza uma opcao valida: ")
+    socket_fd.send(opcao.encode())
+    new_data=socket_fd.recv(2048)
+    new_data=new_data.decode()
+    os.system('clear')
+    options(opcao, socket_fd, new_data)
+
+
+    
 def options(option, socket_fd, new_data): #menu de opcoes possiveis
     if opcao == '1': #escolhe ver a inbox
         print("------INBOX---------\n")
@@ -56,23 +76,27 @@ def options(option, socket_fd, new_data): #menu de opcoes possiveis
             print(product)
             final=input("Press any key to go to inicial menu: ")
         options_menu(socket_fd)
-        
-def options_menu(socket_fd):
-    os.system('clear')
-    print("1.Inbox\n2.Delete E-mail\n3.Send Mail")
-    opcao=input("Introduza uma opcao valida: ")
-    while(opcao !='1' and opcao != '2' and opcao != '3'):
-        opcao=input("Introduza uma opcao valida: ")
-    socket_fd.send(opcao.encode())
-    new_data=socket_fd.recv(2048)
-    new_data=new_data.decode()
-    os.system('clear')
-    options(opcao, socket_fd, new_data)
-
+    elif opcao == '3':
+        lista=[]
+        print("New Mail:\n")
+        assunto=input("Assunto: ")
+        remetente=input("To: ")
+        info=input("Content")
+        lista.append(assunto)
+        lista.append(remetente)
+        lista.append(info)
+        socket_fd.send(str(lista).encode())
+        confirm=socket_fd.recv(1024)
+        confirm=confirm.decode()
+        if confirm == 'sent':
+            print("Mail sent to: ", remetente)
+            final=input("Press any key to go to inicial menu: ")
+            options_menu(socket_fd)
+    
 if __name__=='__main__':
-    HOST = '127.0.0.1'    # The remote host
     PORT = 9000              # The same port as used by the server
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    HOST=socket.gethostname()
     s.connect((HOST, PORT))
     login(s)
     s.close()

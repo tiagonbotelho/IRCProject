@@ -22,7 +22,14 @@ def read_user_file(filename): #vai sempre ao iniciar o programa ler os users que
 def login(data, main_dicio, conn, mail_dicio): #primeira opcao de login
     user_error=404
     for i in data: #vai percorrer a informacao fornecida pelo cliente
-        if i not in main_dicio: #se nao estiver no dicionario de users
+        print(i)
+        if i in main_dicio: #se nao estiver no dicionario de users
+            if(main_dicio[i] != data[i]): #se a pass estiver errada
+                conn.send(str(user_error).encode()) #manda erro de pass errada
+            else:
+                conn.send("continue".encode()) #validation approved
+                accept_option(conn, i, mail_dicio)
+        else:                               #caso exista
             conn.send('2'.encode()) 
             option=conn.recv(1024)
             option=option.decode() #pergunta ao cliente se deseja criar um user
@@ -35,12 +42,7 @@ def login(data, main_dicio, conn, mail_dicio): #primeira opcao de login
                 accept_option(conn, i, mail_dicio)
             else:
                 conn.send("break".encode()) #caso nao manda o cliente terminar
-        else:                               #caso exista
-             if(main_dicio[i] != data[i]): #se a pass estiver errada
-                 conn.send(str(user_error).encode()) #manda erro de pass errada
-             else:
-                 conn.send("continue".encode()) #validation approved
-                 accept_option(conn, i, mail_dicio)
+            
 
 
                  
@@ -75,6 +77,10 @@ def search_mail(mail_dicio, number): #procura o mail total para o mandar caso ne
     return total_mail
 
 
+def set_mail(mail_dicio, new_mail, username):
+    lista=[username, new_mail[0], new_mail[2]]
+    mail_dicio[new_mail[1]].append(lista)
+    return mail_dicio
 
 def accept_option(conn, username, mail_dicio): 
     new_data=conn.recv(2048)
@@ -100,24 +106,33 @@ def accept_option(conn, username, mail_dicio):
             mail_dicio=delete_mail(username, deletion, mail_dicio)
             new_product=char_inbox(username, mail_dicio)
             conn.send(new_product.encode())
-
-
+    elif new_data == '3':
+        new_mail=conn.recv(2048)
+        new_mail=new_mail.decode()
+        new_mail=eval(new_mail)
+        mail_dicio=set_mail(mail_dicio, new_mail, username)
+        write_file(mail_dicio, 'mails.txt')
+        conn.send("sent".encode())
+        
             
 
 if __name__=='__main__':
-    HOST = "127.0.0.1"                
     PORT =9000               
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    HOST= socket.gethostname()
     s.bind((HOST, PORT))
     s.listen(1)
-    conn, addr = s.accept()
-    print('Connected by', addr)
+    #conn, addr = s.accept()
+    #print('Connected by', addr)
     mail_dicio=read_user_file("mails.txt")
     main_dicio=read_user_file("users.txt")
     while True:
+        conn, addr = s.accept()
+        print('Connected by', addr)
         data=conn.recv(1024)
         data=data.decode()
         dicio=eval(data)
-        if not data: break
         login(dicio, main_dicio, conn, mail_dicio)
-        conn.close()
+        if not data: break
+        
+    conn.close()
