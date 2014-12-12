@@ -6,6 +6,7 @@ import os
 
 def login(socket_fd):
     dicio={}
+    os.system('clear')
     username=input("Introduza o seu username: ")
     password=input("Introduza a sua password: ")
     dicio[username]=password #coloca em dicionario a informacao do user
@@ -32,23 +33,26 @@ def login(socket_fd):
             
 def options_menu(socket_fd):
     os.system('clear')
-    print("1.Inbox\n2.Delete E-mail\n3.Send Mail") #menu de opcoes do user
+    print("1.Inbox\n2.Delete E-mail\n3.Send Mail\n4.Log-Out") #menu de opcoes do user
     opcao=input("Introduza uma opcao valida: ")
-    while(opcao !='1' and opcao != '2' and opcao != '3'):
+    while(opcao !='1' and opcao != '2' and opcao != '3' and opcao != '4'):
         opcao=input("Introduza uma opcao valida: ")
     socket_fd.send(opcao.encode())
-    new_data=socket_fd.recv(2048)
-    new_data=new_data.decode()
-    os.system('clear')
-    options(opcao, socket_fd, new_data)
+    #new_data=socket_fd.recv(2048)
+    #new_data=new_data.decode()
+    options(opcao, socket_fd)
+
 
 
     
-def options(option, socket_fd, new_data): #menu de opcoes possiveis
-    if opcao == '1': #escolhe ver a inbox
+def options(option, socket_fd): #menu de opcoes possiveis
+    os.system('clear')
+    if option == '1': #escolhe ver a inbox
         print("------INBOX---------\n")
+        new_data=socket_fd.recv(2048)
+        new_data=new_data.decode()
         print(new_data) #recebe tudo da lista do utilizador
-        number=input("Deseja observar algum email? [number/0]")
+        number=input("Deseja observar algum email? [number/0]: ")
         socket_fd.send(number.encode()) #manda a opcao
         mail=socket_fd.recv(2048)
         mail=mail.decode()
@@ -60,10 +64,12 @@ def options(option, socket_fd, new_data): #menu de opcoes possiveis
             print(mail) #se nao for break recebe o mail correspondente
             final=input("Press any key to go to inicial menu: ")
         options_menu(socket_fd)
-    elif opcao == '2': #opcao para dar DELETE
+    elif option == '2': #opcao para dar DELETE
         print("------DELETE--------\n")
+        new_data=socket_fd.recv(2048)
+        new_data=new_data.decode()
         print(new_data) #imprime a lista de emails
-        number=input("Insira o numero do mail que deseja eliminar [number/0]")
+        number=input("Insira o numero do mail que deseja eliminar [number/0]: ")
         socket_fd.send(number.encode())
         product=socket_fd.recv(2048)
         product=product.decode()
@@ -76,12 +82,12 @@ def options(option, socket_fd, new_data): #menu de opcoes possiveis
             print(product)
             final=input("Press any key to go to inicial menu: ")
         options_menu(socket_fd)
-    elif opcao == '3':
+    elif option == '3':
         lista=[]
         print("New Mail:\n")
         assunto=input("Assunto: ")
         remetente=input("To: ")
-        info=input("Content")
+        info=input("Content: ")
         lista.append(assunto)
         lista.append(remetente)
         lista.append(info)
@@ -92,7 +98,16 @@ def options(option, socket_fd, new_data): #menu de opcoes possiveis
             print("Mail sent to: ", remetente)
             final=input("Press any key to go to inicial menu: ")
             options_menu(socket_fd)
-    
+    elif option == '4':
+        socket_fd.send("log".encode())
+        confirm=socket_fd.recv(1024)
+        confirm=confirm.decode()
+        if confirm=='ok':
+            print("User disconnected")
+            final=input("Press any key to go to inicial menu: ")
+            sys.exit(1)
+
+        
 if __name__=='__main__':
     PORT = 9000              # The same port as used by the server
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

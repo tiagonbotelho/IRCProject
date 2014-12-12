@@ -26,9 +26,10 @@ def login(data, main_dicio, conn, mail_dicio): #primeira opcao de login
         if i in main_dicio: #se nao estiver no dicionario de users
             if(main_dicio[i] != data[i]): #se a pass estiver errada
                 conn.send(str(user_error).encode()) #manda erro de pass errada
+                return (False, i)
             else:
                 conn.send("continue".encode()) #validation approved
-                accept_option(conn, i, mail_dicio)
+                return (True, i)
         else:                               #caso exista
             conn.send('2'.encode()) 
             option=conn.recv(1024)
@@ -39,10 +40,10 @@ def login(data, main_dicio, conn, mail_dicio): #primeira opcao de login
                 write_file(main_dicio, "users.txt") #update no file de users
                 write_file(mail_dicio, "mails.txt")
                 conn.send("continue".encode()) #pede mais informacao ao user
-                accept_option(conn, i, mail_dicio)
+                return (True, i)
             else:
                 conn.send("break".encode()) #caso nao manda o cliente terminar
-            
+                return (False, i)
 
 
                  
@@ -53,7 +54,7 @@ def char_inbox(username, mail_dicio): #coloca todos os emails do user numa strin
         if i == username:
             lista=mail_dicio[i]
     for j in lista:
-        buffer_string+=itera+"\n---------------\n"+str(j[0])+"\n"+str(j[1])+"\n"+"-----------\n"
+        buffer_string+=str(itera)+"\n---------------\n"+str(j[0])+"\n"+str(j[1])+"\n"+"-----------\n"
         itera+=1
     return buffer_string
 
@@ -63,17 +64,18 @@ def delete_mail(username, number, mail_dicio): #deleta do mail
     for i in mail_dicio:
         if i == username:
             lista=mail_dicio[i] #copia para uma lista os mails de um user
-    lista[i].pop(number-1) #retira o mail na pos numero-1
+    lista.pop(int(number)-1) #retira o mail na pos numero-1
     mail_dicio[username]=lista #renova o mail_dicio
+    write_file(mail_dicio, 'mails.txt')
     return mail_dicio
 
 
 
-def search_mail(mail_dicio, number): #procura o mail total para o mandar caso necessario
+def search_mail(mail_dicio, number, username): #procura o mail total para o mandar caso necessario
     for i in mail_dicio:
         if i == username:
             lista=mail_dicio[i]
-    total_mail=str(lista[number-1][2])
+    total_mail=str(lista[int(number)-1][2])
     return total_mail
 
 
@@ -85,6 +87,7 @@ def set_mail(mail_dicio, new_mail, username):
 def accept_option(conn, username, mail_dicio): 
     new_data=conn.recv(2048)
     new_data=new_data.decode()
+    print(new_data)
     if new_data=='1':
         sender=char_inbox(username, mail_dicio) #string com todos os emails
         conn.send(sender.encode())
@@ -93,7 +96,7 @@ def accept_option(conn, username, mail_dicio):
         if opcao == '0':
             conn.send("break".encode())
         else:
-            mail=search_mail(mail_dicio, opcao) #procura o mail
+            mail=search_mail(mail_dicio, opcao, username) #procura o mail
             conn.send(mail.encode()) #manda o email
     elif new_data=='2':
         sender=char_inbox(username, mail_dicio) 
@@ -113,7 +116,11 @@ def accept_option(conn, username, mail_dicio):
         mail_dicio=set_mail(mail_dicio, new_mail, username)
         write_file(mail_dicio, 'mails.txt')
         conn.send("sent".encode())
-        
+    elif new_data == '4':
+        conn.send("ok".encode())
+        return False
+    accept_option(conn, username, mail_dicio)
+    return True
             
 
 if __name__=='__main__':
@@ -132,7 +139,13 @@ if __name__=='__main__':
         data=conn.recv(1024)
         data=data.decode()
         dicio=eval(data)
-        login(dicio, main_dicio, conn, mail_dicio)
+        result, i=login(dicio, main_dicio, conn, mail_dicio)
+        if result == True:
+            log=accept_option(conn, i, mail_dicio)
+            #if log == False:
+            #    break
+        else:
+            break
         if not data: break
         
     conn.close()
