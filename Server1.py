@@ -2,7 +2,7 @@ import socket
 import os
 import signal
 import sys
-
+import _thread
 
 def signal_handler(signal, frame):
     print(' pressed...exiting now')
@@ -59,7 +59,7 @@ def char_inbox(username, mail_dicio): #coloca todos os emails do user numa strin
         if i == username:
             lista=mail_dicio[i]
     for j in lista:
-        buffer_string+=str(itera)+"\n---------------\n"+str(j[0])+"\n"+str(j[1])+"\n"+"-----------\n"
+        buffer_string+="Message number: "+str(itera)+"\n---------------\n"+"From: "+str(j[0])+"\n"+"Assunto: "+str(j[1])+"\n"+"-----------\n"
         itera+=1
     return buffer_string
 
@@ -84,16 +84,37 @@ def search_mail(mail_dicio, number, username): #procura o mail total para o mand
     return total_mail
 
 
-def set_mail(mail_dicio, new_mail, username):
+def set_mail(mail_dicio, new_mail, username, conn):
     lista=[username, new_mail[0], new_mail[2]]
-    mail_dicio[new_mail[1]].append(lista)
-    return mail_dicio
+    if new_mail[1] in mail_dicio:
+       mail_dicio[new_mail[1]].append(lista)
+       write_file(mail_dicio, 'mails.txt')
+       conn.send("sent".encode())
+    else:
+        lista.append(new_mail[1])
+        PORT = 9001              # The same port as used by the server
+        so = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        HOST=socket.gethostname()
+        so.connect((HOST, PORT))
+        so.send(str(lista).encode())
+        data=so.recv(1024)
+        data=data.decode()
+        if data == 'no':
+            conn.send('no'.encode())
+        elif data == 'sent':
+            conn.send('sent'.encode())
+        so.close()
+        
 
-def accept_option(conn, username, mail_dicio): 
+def accept_option(conn, username, mail_dicio):
+    mail_dicio=read_user_file("mails.txt")
+    main_dicio=read_user_file("users.txt")
     new_data=conn.recv(2048)
     new_data=new_data.decode()
     print(new_data)
     if new_data=='1':
+        mail_dicio=read_user_file("mails.txt")
+        main_dicio=read_user_file("users.txt")
         sender=char_inbox(username, mail_dicio) #string com todos os emails
         conn.send(sender.encode())
         opcao=conn.recv(1024)
@@ -118,15 +139,28 @@ def accept_option(conn, username, mail_dicio):
         new_mail=conn.recv(2048)
         new_mail=new_mail.decode()
         new_mail=eval(new_mail)
-        mail_dicio=set_mail(mail_dicio, new_mail, username)
-        write_file(mail_dicio, 'mails.txt')
-        conn.send("sent".encode())
+        set_mail(mail_dicio, new_mail, username, conn)
     elif new_data == '4':
         conn.send("ok".encode())
         return False
     accept_option(conn, username, mail_dicio)
     return True
-            
+
+def handler(conn, addr):
+    mail_dicio=read_user_file("mails.txt")
+    main_dicio=read_user_file("users.txt")
+    while True:
+        print('Connected by: ', addr)
+        data=conn.recv(1024)
+        data=data.decode()
+        dicio=eval(data)
+        result, i= login(dicio, main_dicio, conn, mail_dicio)
+        if result == True:
+            log = accept_option(conn, i, mail_dicio)
+        else:
+            break
+        if not data: break
+    
 
 if __name__=='__main__':
     PORT =9000               
@@ -136,22 +170,23 @@ if __name__=='__main__':
     s.listen(1)
     #conn, addr = s.accept()
     #print('Connected by', addr)
-    mail_dicio=read_user_file("mails.txt")
-    main_dicio=read_user_file("users.txt")
+    #mail_dicio=read_user_file("mails.txt")
+    #main_dicio=read_user_file("users.txt")
     while True:
         signal.signal(signal.SIGINT, signal_handler)
         conn, addr = s.accept()
-        print('Connected by', addr)
-        data=conn.recv(1024)
-        data=data.decode()
-        dicio=eval(data)
-        result, i=login(dicio, main_dicio, conn, mail_dicio)
-        if result == True:
-            log=accept_option(conn, i, mail_dicio)
-            #if log == False:
-            #    break
-        else:
-            break
-        if not data: break
+        _thread.start_new_thread(handler, (conn, addr))
+        #print('Connected by', addr)
+        #data=conn.recv(1024)
+        #data=data.decode()
+        #dicio=eval(data)
+        #result, i=login(dicio, main_dicio, conn, mail_dicio)
+        #if result == True:
+        #    log=accept_option(conn, i, mail_dicio)
+        #    #if log == False:
+        #    #    break
+        #else:
+        #    break
+        #if not data: break
         
     conn.close()

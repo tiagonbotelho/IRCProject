@@ -98,8 +98,11 @@ def options(option, socket_fd): #menu de opcoes possiveis
             print("Mail sent to: ", remetente)
             final=input("Press any key to go to inicial menu: ")
             options_menu(socket_fd)
+        elif confirm == 'no':
+            print('Mail not sent to: ', remetente)
+            final=input('Press any key to go to inicial menu: ')
+            options_menu(socket_fd)
     elif option == '4':
-        socket_fd.send("log".encode())
         confirm=socket_fd.recv(1024)
         confirm=confirm.decode()
         if confirm=='ok':
