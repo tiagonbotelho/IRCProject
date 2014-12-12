@@ -1,5 +1,6 @@
 import socket
-import system
+import sys
+import os
 
 def login(socket_fd):
     dicio={}
@@ -14,18 +15,59 @@ def login(socket_fd):
         login(socket_fd) #volta ao menu inicial para poder pedir a informacao
     elif new_data == '2':
         option=input("[User not found] do you wish to create one? [y/n] ")
-        socket_fd.send(option.encode())
+        socket_fd.send(option.encode()) #manda a opcao escolhida pelo user
         nextm=socket_fd.recv(1024)
         nextm=nextm.decode()
-            if nextm == 'continue':
-                options_menu(socket_fd)
-            else:
-                print("Ok... bye bye!")
-                sys.exit(0)
+        if nextm == 'continue': #se recebeu continue proxime set de opcoes
+            options_menu(socket_fd)
+        else:
+            print("Ok... bye bye!")
+            sys.exit(0)
 
+def options(option, socket_fd, new_data): #menu de opcoes possiveis
+    if opcao == '1': #escolhe ver a inbox
+        print("------INBOX---------\n")
+        print(new_data) #recebe tudo da lista do utilizador
+        number=input("Deseja observar algum email? [number/0]")
+        socket_fd.send(number.encode()) #manda a opcao
+        mail=socket_fd.recv(2048)
+        mail=mail.decode()
+        os.system('clear')
+        if(mail=='break'): #se recebe break do servidor vai para o menu
+            print("Sera agora remetido para o seu menu")
+            final=input("Press any key to go to inicial menu: ")
+        else:
+            print(mail) #se nao for break recebe o mail correspondente
+            final=input("Press any key to go to inicial menu: ")
+        options_menu(socket_fd)
+    elif opcao == '2': #opcao para dar DELETE
+        print("------DELETE--------\n")
+        print(new_data) #imprime a lista de emails
+        number=input("Insira o numero do mail que deseja eliminar [number/0]")
+        socket_fd.send(number.encode())
+        product=socket_fd.recv(2048)
+        product=product.decode()
+        if product == 'break': #SE MANDAR O 0
+            print("Sera agora remetido para o seu menu")
+            final=input("Press any key to go to inicial menu: ")
+        else: #vai imprimir os mails do user atualizados
+            os.system('clear')
+            print("Emails atualizados com sucesso!\n\n")
+            print(product)
+            final=input("Press any key to go to inicial menu: ")
+        options_menu(socket_fd)
+        
 def options_menu(socket_fd):
-    
-            
+    os.system('clear')
+    print("1.Inbox\n2.Delete E-mail\n3.Send Mail")
+    opcao=input("Introduza uma opcao valida: ")
+    while(opcao !='1' and opcao != '2' and opcao != '3'):
+        opcao=input("Introduza uma opcao valida: ")
+    socket_fd.send(opcao.encode())
+    new_data=socket_fd.recv(2048)
+    new_data=new_data.decode()
+    os.system('clear')
+    options(opcao, socket_fd, new_data)
 
 if __name__=='__main__':
     HOST = '127.0.0.1'    # The remote host
@@ -33,7 +75,4 @@ if __name__=='__main__':
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((HOST, PORT))
     login(s)
-    data = s.recv(1024)
-    data=data.decode()
-    dicionary=eval(data)
     s.close()

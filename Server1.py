@@ -1,10 +1,15 @@
 import socket
+import os
+
+
 
 def write_file(dicio, filename):
     fp=open(filename, "w")
     fp.write(str(dicio))  #vai re-escrever sempre os users no ficheiro
     fp.close()
 
+
+    
 def read_user_file(filename): #vai sempre ao iniciar o programa ler os users que tem
     f=open(filename,"r")
     aux=f.read()
@@ -12,7 +17,9 @@ def read_user_file(filename): #vai sempre ao iniciar o programa ler os users que
     f.close()
     return dicio
 
-def login(data, main_dicio, conn, main_list): #primeira opcao de login
+
+
+def login(data, main_dicio, conn, mail_dicio): #primeira opcao de login
     user_error=404
     for i in data: #vai percorrer a informacao fornecida pelo cliente
         if i not in main_dicio: #se nao estiver no dicionario de users
@@ -20,25 +27,82 @@ def login(data, main_dicio, conn, main_list): #primeira opcao de login
             option=conn.recv(1024)
             option=option.decode() #pergunta ao cliente se deseja criar um user
             if option == 'y':
-                new_dicio={}
-                main_dicio.update(dicio) #faz update ao dicionario de users
-                aux_dicio[i]=[]
-                main_list.append(aux_dicio) #faz update a lista de mails de users
+                main_dicio.update(data) #faz update ao dicionario de users
+                mail_dicio[i]=[]
                 write_file(main_dicio, "users.txt") #update no file de users
+                write_file(mail_dicio, "mails.txt")
                 conn.send("continue".encode()) #pede mais informacao ao user
-                accept_option(conn, i)
+                accept_option(conn, i, mail_dicio)
             else:
                 conn.send("break".encode()) #caso nao manda o cliente terminar
         else:                               #caso exista
-             if(main_dicio[i] != dicio[i]): #se a pass estiver errada
+             if(main_dicio[i] != data[i]): #se a pass estiver errada
                  conn.send(str(user_error).encode()) #manda erro de pass errada
              else:
                  conn.send("continue".encode()) #validation approved
-                 accept_option(conn, i)
+                 accept_option(conn, i, mail_dicio)
 
-def accept_option(conn, username):
-    
-    
+
+                 
+def char_inbox(username, mail_dicio): #coloca todos os emails do user numa string numerados
+    buffer_string=""
+    itera=1
+    for i in mail_dicio:
+        if i == username:
+            lista=mail_dicio[i]
+    for j in lista:
+        buffer_string+=itera+"\n---------------\n"+str(j[0])+"\n"+str(j[1])+"\n"+"-----------\n"
+        itera+=1
+    return buffer_string
+
+
+
+def delete_mail(username, number, mail_dicio): #deleta do mail 
+    for i in mail_dicio:
+        if i == username:
+            lista=mail_dicio[i] #copia para uma lista os mails de um user
+    lista[i].pop(number-1) #retira o mail na pos numero-1
+    mail_dicio[username]=lista #renova o mail_dicio
+    return mail_dicio
+
+
+
+def search_mail(mail_dicio, number): #procura o mail total para o mandar caso necessario
+    for i in mail_dicio:
+        if i == username:
+            lista=mail_dicio[i]
+    total_mail=str(lista[number-1][2])
+    return total_mail
+
+
+
+def accept_option(conn, username, mail_dicio): 
+    new_data=conn.recv(2048)
+    new_data=new_data.decode()
+    if new_data=='1':
+        sender=char_inbox(username, mail_dicio) #string com todos os emails
+        conn.send(sender.encode())
+        opcao=conn.recv(1024)
+        opcao=opcao.decode() #vai decidir se quer ler um mail ou nao 0 se nao
+        if opcao == '0':
+            conn.send("break".encode())
+        else:
+            mail=search_mail(mail_dicio, opcao) #procura o mail
+            conn.send(mail.encode()) #manda o email
+    elif new_data=='2':
+        sender=char_inbox(username, mail_dicio) 
+        conn.send(sender.encode())
+        deletion=conn.recv(1024) #vai receber o numero para deletar 0 nao deleta
+        deletion=deletion.decode()
+        if deletion == '0':
+            conn.send("break".encode())
+        else:
+            mail_dicio=delete_mail(username, deletion, mail_dicio)
+            new_product=char_inbox(username, mail_dicio)
+            conn.send(new_product.encode())
+
+
+            
 
 if __name__=='__main__':
     HOST = "127.0.0.1"                
@@ -48,10 +112,12 @@ if __name__=='__main__':
     s.listen(1)
     conn, addr = s.accept()
     print('Connected by', addr)
+    mail_dicio=read_user_file("mails.txt")
+    main_dicio=read_user_file("users.txt")
     while True:
         data=conn.recv(1024)
         data=data.decode()
         dicio=eval(data)
         if not data: break
-        login(dicio, main_dicio, conn)
+        login(dicio, main_dicio, conn, mail_dicio)
         conn.close()
