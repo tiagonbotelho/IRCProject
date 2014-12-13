@@ -52,17 +52,20 @@ def options(option, socket_fd): #menu de opcoes possiveis
         new_data=socket_fd.recv(2048)
         new_data=new_data.decode()
         print(new_data) #recebe tudo da lista do utilizador
-        number=input("Deseja observar algum email? [number/0]: ")
-        socket_fd.send(number.encode()) #manda a opcao
-        mail=socket_fd.recv(2048)
-        mail=mail.decode()
-        os.system('clear')
-        if(mail=='break'): #se recebe break do servidor vai para o menu
-            print("Sera agora remetido para o seu menu")
-            final=input("Press any key to go to inicial menu: ")
+        if new_data == 'empty':
+            opcao=input("Inbox vazia pressione qualquer tecla para ir para o menu inicial: ")
         else:
-            print(mail) #se nao for break recebe o mail correspondente
-            final=input("Press any key to go to inicial menu: ")
+            number=input("Deseja observar algum email? [number/0]: ")
+            socket_fd.send(number.encode()) #manda a opcao
+            mail=socket_fd.recv(2048)
+            mail=mail.decode()
+            os.system('clear')
+            if(mail=='break'): #se recebe break do servidor vai para o menu
+                print("Sera agora remetido para o seu menu")
+                final=input("Press any key to go to inicial menu: ")
+            else:
+                print(mail) #se nao for break recebe o mail correspondente
+                final=input("Press any key to go to inicial menu: ")
         options_menu(socket_fd)
     elif option == '2': #opcao para dar DELETE
         print("------DELETE--------\n")

@@ -58,10 +58,13 @@ def char_inbox(username, mail_dicio): #coloca todos os emails do user numa strin
     for i in mail_dicio:
         if i == username:
             lista=mail_dicio[i]
-    for j in lista:
-        buffer_string+="Message number: "+str(itera)+"\n---------------\n"+"From: "+str(j[0])+"\n"+"Assunto: "+str(j[1])+"\n"+"-----------\n"
-        itera+=1
-    return buffer_string
+    if lista != []:
+        for j in lista:
+            buffer_string+="Message number: "+str(itera)+"\n---------------\n"+"From: "+str(j[0])+"\n"+"Assunto: "+str(j[1])+"\n"+"-----------\n"
+            itera+=1
+        return buffer_string
+    else:
+        return 'empty'
 
 
 
@@ -79,8 +82,11 @@ def delete_mail(username, number, mail_dicio): #deleta do mail
 def search_mail(mail_dicio, number, username): #procura o mail total para o mandar caso necessario
     for i in mail_dicio:
         if i == username:
-            lista=mail_dicio[i]
-    total_mail=str(lista[int(number)-1][2])
+            if mail_dicio[i] != '':
+                lista=mail_dicio[i]
+                total_mail=str(lista[int(number)-1][2])
+            else:
+                total_mail=''
     return total_mail
 
 
@@ -125,6 +131,8 @@ def accept_option(conn, username, mail_dicio):
             mail=search_mail(mail_dicio, opcao, username) #procura o mail
             conn.send(mail.encode()) #manda o email
     elif new_data=='2':
+        mail_dicio=read_user_file("mails.txt")
+        main_dicio=read_user_file("users.txt")
         sender=char_inbox(username, mail_dicio) 
         conn.send(sender.encode())
         deletion=conn.recv(1024) #vai receber o numero para deletar 0 nao deleta
