@@ -11,6 +11,7 @@ def login(socket_fd):
     password=input("Introduza a sua password: ")
     dicio[username]=password #coloca em dicionario a informacao do user
     socket_fd.send(str(dicio).encode()) #manda pelo socket
+    print(dicio)
     new_data=socket_fd.recv(1024) 
     new_data=new_data.decode()
     if new_data == '404': 
@@ -111,11 +112,12 @@ def options(option, socket_fd): #menu de opcoes possiveis
         if confirm=='ok':
             print("User disconnected")
             final=input("Press any key to go to inicial menu: ")
+            socket_fd.close()
             sys.exit(1)
 
         
 if __name__=='__main__':
-    PORT = 9000              # The same port as used by the server
+    PORT=9000
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     HOST=socket.gethostname()
     s.connect((HOST, PORT))

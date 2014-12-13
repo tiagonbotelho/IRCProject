@@ -4,6 +4,7 @@ import signal
 import sys
 import _thread
 
+
 def signal_handler(signal, frame):
     print(' pressed...exiting now')
     sys.exit(1)
@@ -13,7 +14,14 @@ def write_file(dicio, filename):
     fp.write(str(dicio))  #vai re-escrever sempre os users no ficheiro
     fp.close()
 
-
+def file_protection(filename):
+    ficheiro=open(filename, "r")
+    aux=ficheiro.read()
+    if os.stat(filename).st_size == 0:
+        ficheiro.close()
+        ficheiro=open(filename, "w")
+        ficheiro=write('{}')
+        ficheiro.close()
     
 def read_user_file(filename): #vai sempre ao iniciar o programa ler os users que tem
     f=open(filename,"r")
@@ -29,6 +37,8 @@ if __name__=='__main__':
     HOST= socket.gethostname()
     s.bind((HOST, PORT))
     s.listen(1)
+    file_protection('mails2.txt')
+    file_protection('users2.txt')
     mail_dicio=read_user_file("mails2.txt")
     main_dicio=read_user_file("users2.txt")
     while True:
