@@ -116,28 +116,30 @@ def search_mail(mail_dicio, number, username): #procura o mail total para o mand
 def set_mail(mail_dicio, new_mail, username, conn):
     lista=[username, new_mail[0], new_mail[2]]
 
-    if new_mail[1] in mail_dicio: #se encontra no server1
-       mail_dicio[new_mail[1]].append(lista)
-       write_file(mail_dicio, 'mails.txt') #atualiza o ficheiro
-       conn.send("sent".encode())
+    for i in new_mail[1]:
+        
+        if i in mail_dicio: #se encontra no server1
+            mail_dicio[i].append(lista)
+            write_file(mail_dicio, 'mails.txt') #atualiza o ficheiro
+            conn.send("sent".encode())
 
-    else:
-        lista.append(new_mail[1]) #se nao encontrar o user no server1
-        PORT = 9001              # The same port as used by the server
-        so = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        HOST=socket.gethostname()
-        so.connect((HOST, PORT)) 
-        so.send(str(lista).encode())
-        data=so.recv(1024)
-        data=data.decode()
-        print(data) ##DEBUG
+        else:
+            lista.append(i) #se nao encontrar o user no server1
+            PORT = 9001              # The same port as used by the server
+            so = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            HOST=socket.gethostname()
+            so.connect((HOST, PORT)) 
+            so.send(str(lista).encode())
+            data=so.recv(1024)
+            data=data.decode()
+            print(data) ##DEBUG
 
-        if data == 'no':
-            conn.send('no'.encode()) #manda o nao encontrou para o cliente
+            if data == 'no':
+                conn.send('no'.encode()) #manda o nao encontrou para o cliente
 
-        elif data == 'sent':
-            conn.send('sent'.encode()) #enviou para um user do servidor2
-        so.close()
+            elif data == 'sent':
+                conn.send('sent'.encode()) #enviou para um user do servidor2
+            so.close()
 
 
 def accept_option(conn, username, mail_dicio):
@@ -192,10 +194,12 @@ def accept_option(conn, username, mail_dicio):
         new_mail=conn.recv(2048)
         new_mail=new_mail.decode()
         new_mail=eval(new_mail)
+        print(new_mail)
         set_mail(mail_dicio, new_mail, username, conn) #coloca no email do user correspondente
 
     elif new_data == '4': #LOGOFF
         conn.send("ok".encode())
+        write_file(mail_dicio, 'mails.txt')
         return False
     accept_option(conn, username, mail_dicio)
     return True
